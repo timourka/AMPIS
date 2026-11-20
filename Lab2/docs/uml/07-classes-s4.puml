@@ -1,0 +1,46 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam backgroundColor #F6F8FC
+title S4 · Списки и статистика
+class Program <<Minimal API>> {
+ +GET /api/files
+ +GET /api/statistics/{id}
+}
+class Reports {
+ {static} +List(q, sort, dir, page, size): Task<IResult>
+ {static} +Statistics(id, http): Task<IResult>
+ {static} +Apply(db, tx, event): Task
+}
+class FileItem <<record>> {
+ +Id: Guid
+ +Name: string
+ +Owner: string
+ +Downloads: long
+}
+class ActionHandler <<delegate>>
+class ReportWorker {
+ #Process(channel, ct): Task
+}
+Program ..> Reports : маршруты
+ReportWorker --> ActionHandler
+Reports ..> FileItem
+Reports ..> Shared : Db / User
+Reports ..> LabEvent : Apply
+Program ..> Shared : Start(consume)
+class Shared {
+ {static} +Db(): NpgsqlConnection
+ {static} +User(http): Guid?
+ {static} +Token(id): string
+ {static} +Enqueue(db, tx, e): Task
+ {static} +Start(builder, publish, consume): void
+}
+class LabEvent <<record>> {
+ +EventId: Guid
+ +Type: string
+ +FileId: Guid
+ +UserId: Guid
+ +Name: string?
+}
+@enduml

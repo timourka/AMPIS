@@ -1,0 +1,20 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+ARG SERVICE
+COPY . .
+RUN dotnet publish "$SERVICE/$SERVICE.csproj" -c Release -o /out
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+FROM postgres:16
+ARG SERVICE
+ENV SERVICE=$SERVICE ASPNETCORE_HTTP_PORTS=8080 PGDATA=/var/lib/lab2/data
+COPY --from=runtime /usr/share/dotnet /usr/share/dotnet
+RUN ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet \
+    && mkdir -p /var/lib/lab2 && chown postgres /var/lib/lab2
+ENTRYPOINT []
+WORKDIR /app
+COPY --from=build /out .
+COPY db/paired.sh /paired.sh
+COPY db/s1.sql db/s4.sql /db/
+RUN sed -i 's/\r$//' /paired.sh
+USER postgres
+CMD ["bash", "/paired.sh"]

@@ -1,0 +1,36 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam backgroundColor #F6F8FC
+skinparam ArrowColor #344564
+skinparam defaultFontColor #152441
+hide stereotype
+title Компоненты · Файловый сервис
+left to right direction
+actor Пользователь as U
+component "G1 · Web и шлюз" as G #DAE8FF
+component "S1 · Пользователи" as S1
+component "S2 · Загрузка и удаление" as S2
+component "S3 · Скачивание" as S3
+component "S4 · Поиск и статистика" as S4
+queue "D1 · RabbitMQ" as MQ #FFE8CB
+database "B1 · Пользователи" as B1
+database "B2 · Оригиналы" as B2
+database "B3 · Копии и история" as B3
+database "B4 · Списки и отчёты" as B4
+U --> G : HTTP
+G --> S1 : HTTP
+G --> S2 : HTTP
+G --> S3 : HTTP
+G --> S4 : HTTP
+S1 --> B1 : SQL
+S2 --> B2 : SQL
+S3 --> B3 : SQL
+S4 --> B4 : SQL
+B2 ..> B3 : репликация files
+S1 ..> MQ : AMQP
+S2 ..> MQ : AMQP
+S3 ..> MQ : AMQP
+MQ ..> S4 : AMQP
+@enduml

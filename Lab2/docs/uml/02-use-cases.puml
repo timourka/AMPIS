@@ -1,0 +1,40 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam backgroundColor #F6F8FC
+skinparam ArrowColor #344564
+skinparam defaultFontColor #152441
+hide stereotype
+title Варианты использования · Файловый сервис
+left to right direction
+actor "Посетитель" as Visitor
+actor "Гость" as Guest
+actor "Пользователь с учётной записью" as Member
+Guest --|> Visitor
+Member --|> Visitor
+rectangle "Файловый сервис" {
+ usecase "Просмотреть список" as List
+ usecase "Найти файл" as Search
+ usecase "Отсортировать список" as Sort
+ usecase "Перейти на другую страницу" as Page
+ usecase "Скачать файл" as Download
+ usecase "Зарегистрироваться" as Register
+ usecase "Войти" as Login
+ usecase "Загрузить файл" as Upload
+ usecase "Удалить свой файл" as Delete
+ usecase "Изменить своё имя" as Name
+ usecase "Посмотреть статистику своего файла" as Stats
+}
+Visitor -- List
+Visitor -- Download
+Search ..> List : <<extend>>
+Sort ..> List : <<extend>>
+Page ..> List : <<extend>>
+Guest -- Register
+Guest -- Login
+Member -- Upload
+Member -- Delete
+Member -- Name
+Member -- Stats
+@enduml

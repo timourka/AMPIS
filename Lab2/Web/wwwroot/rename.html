@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>Имя</title><link rel="stylesheet" href="/site.css"></head>
+<body>
+<h1>Имя</h1>
+<form>
+<label>Новое имя <input name="name" required maxlength="64"></label>
+<button>Сохранить</button>
+</form>
+<p class="status"></p>
+<script src="/api.js"></script>
+<script>
+document.querySelector("form").addEventListener("submit", async event => {
+  event.preventDefault();
+  try {
+    await api("/api/profile", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()), body: JSON.stringify(readFields(event.target)) });
+  } catch (error) {
+    document.querySelector(".status").textContent = error.message;
+  }
+});
+</script>
+</body></html>

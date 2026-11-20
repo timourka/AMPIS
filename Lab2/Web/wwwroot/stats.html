@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>Статистика</title><link rel="stylesheet" href="/site.css"></head>
+<body>
+<h1>Статистика</h1>
+<a href="/my-files">Мои файлы</a> <a href="/files">Общий список</a>
+<p>Всего: <span class="total"></span></p>
+<p>Анонимно: <span class="anonymous"></span></p>
+<ul class="users"></ul>
+<p class="status"></p>
+<script src="/api.js"></script>
+<script>
+async function loadStatistics() {
+  const id = new URLSearchParams(location.search).get("id") ?? "";
+  if (!/^[0-9a-fA-F-]{36}$/.test(id)) {
+    document.querySelector(".status").textContent = "Нужен идентификатор файла";
+    return;
+  }
+  const response = await api("/api/statistics/" + id, { headers: authHeaders() });
+  if (response.status === 503) document.querySelector(".status").textContent = "Сервис статистики недоступен";
+  if (!response.ok) return;
+  const data = await response.json();
+  document.querySelector(".total").textContent = String(data.total ?? 0);
+  document.querySelector(".anonymous").textContent = String(data.anonymous ?? 0);
+  const list = document.querySelector(".users");
+  list.replaceChildren();
+  for (const user of data.users || []) {
+    const item = document.createElement("li");
+    item.textContent = String(user);
+    list.append(item);
+  }
+}
+loadStatistics().catch(() => {
+  document.querySelector(".status").textContent = "Не удалось загрузить статистику";
+});
+</script>
+</body></html>

@@ -1,0 +1,56 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam backgroundColor #F6F8FC
+skinparam ArrowColor #344564
+skinparam defaultFontColor #152441
+hide stereotype
+title Развёртывание · Docker Compose
+left to right direction
+node "Браузер" as Browser
+node "Docker host · сеть ampis-lab2" {
+ node "web" {
+   artifact "Web.dll · G1" as W
+ }
+ node "s1" {
+   artifact "S1.dll" as A1
+   database "PostgreSQL · B1" as P1
+ }
+ node "s2" {
+   artifact "S2.dll" as A2
+ }
+ node "s3" {
+   artifact "S3.dll" as A3
+ }
+ node "s4" {
+   artifact "S4.dll" as A4
+   database "PostgreSQL · B4" as P4
+ }
+ node "b2" {
+   database "PostgreSQL · lab" as P2
+ }
+ node "b3" {
+   database "PostgreSQL · files_read" as R3
+   database "PostgreSQL · lab (история)" as P3
+ }
+ node "rabbitmq" {
+   queue "RabbitMQ" as Q
+ }
+}
+Browser --> W : :8088 → :8080
+W --> A1
+W --> A2
+W --> A3
+W --> A4
+A1 --> P1 : localhost
+A4 --> P4 : localhost
+A2 --> P2 : SQL
+A3 --> R3 : SELECT
+A3 --> P3 : INSERT
+P2 ..> R3 : replication
+A1 ..> Q
+A2 ..> Q
+A3 ..> Q
+Q ..> A4
+@enduml

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>Вход</title><link rel="stylesheet" href="/site.css"></head>
+<body>
+<h1>Вход</h1>
+<form>
+<label>Логин <input name="login" required maxlength="64" autocomplete="username"></label>
+<label>Пароль <input name="password" type="password" required maxlength="128" autocomplete="current-password"></label>
+<button>Войти</button>
+</form>
+<p class="status"></p>
+<script src="/api.js"></script>
+<script>
+document.querySelector("form").addEventListener("submit", async event => {
+  event.preventDefault();
+  try {
+    const response = await api("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(readFields(event.target)) });
+    if (!response.ok) return;
+    const data = await response.json();
+    sessionStorage.setItem("token", data.token);
+    location.replace("/");
+  } catch (error) {
+    document.querySelector(".status").textContent = error.message;
+  }
+});
+</script>
+</body></html>

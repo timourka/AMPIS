@@ -1,0 +1,38 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam backgroundColor #F6F8FC
+title S2 · Загрузка и удаление
+class Program <<Minimal API>> {
+ +POST /api/upload
+ +DELETE /api/files/{id}
+ -SafeName(raw): string?
+}
+class IFormFile <<ASP.NET Core>> {
+ +FileName: string
+ +Length: long
+ +CopyToAsync(stream): Task
+}
+Program ..> IFormFile : multipart
+class Shared {
+ {static} +Db(): NpgsqlConnection
+ {static} +User(http): Guid?
+ {static} +Token(id): string
+ {static} +Enqueue(db, tx, e): Task
+ {static} +Start(builder, publish, consume): void
+}
+class LabEvent <<record>> {
+ +EventId: Guid
+ +Type: string
+ +FileId: Guid
+ +UserId: Guid
+ +Name: string?
+}
+class OutboxWorker {
+ #Process(channel, ct): Task
+}
+Program ..> Shared
+Program ..> LabEvent : создаёт
+Shared ..> OutboxWorker : запускает
+@enduml

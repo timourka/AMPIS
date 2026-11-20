@@ -1,0 +1,52 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam backgroundColor #F6F8FC
+title S1 · Пользователи
+class Program <<Minimal API>> {
+ +POST /api/register
+ +POST /api/login
+ +POST /api/profile
+}
+class Cred <<record>> { 
+ +Login: string?
+ +Password: string?
+ +Name: string?
+}
+class LoginBody <<record>> {
+ +Login: string?
+ +Password: string?
+}
+class NameBody <<record>> {
+ +Name: string?
+}
+class PasswordHasher {
+ {static} +Hash(password): string
+ {static} +Verify(password, stored): bool
+}
+Program ..> Cred
+Program ..> LoginBody
+Program ..> NameBody
+Program ..> PasswordHasher
+class Shared {
+ {static} +Db(): NpgsqlConnection
+ {static} +User(http): Guid?
+ {static} +Token(id): string
+ {static} +Enqueue(db, tx, e): Task
+ {static} +Start(builder, publish, consume): void
+}
+class LabEvent <<record>> {
+ +EventId: Guid
+ +Type: string
+ +FileId: Guid
+ +UserId: Guid
+ +Name: string?
+}
+class OutboxWorker {
+ #Process(channel, ct): Task
+}
+Program ..> Shared
+Program ..> LabEvent : создаёт
+Shared ..> OutboxWorker : запускает
+@enduml

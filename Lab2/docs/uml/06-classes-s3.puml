@@ -1,0 +1,37 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam backgroundColor #F6F8FC
+title S3 · Скачивание
+class Program <<Minimal API>> {
+ +GET /api/download/{id}
+ -FilesDb(): NpgsqlConnection
+}
+class NpgsqlConnection
+class Results <<ASP.NET Core>> {
+ {static} +File(content, contentType, name): IResult
+}
+Program ..> NpgsqlConnection : SELECT files_read / INSERT history
+Program ..> Results : attachment
+class Shared {
+ {static} +Db(): NpgsqlConnection
+ {static} +User(http): Guid?
+ {static} +Token(id): string
+ {static} +Enqueue(db, tx, e): Task
+ {static} +Start(builder, publish, consume): void
+}
+class LabEvent <<record>> {
+ +EventId: Guid
+ +Type: string
+ +FileId: Guid
+ +UserId: Guid
+ +Name: string?
+}
+class OutboxWorker {
+ #Process(channel, ct): Task
+}
+Program ..> Shared
+Program ..> LabEvent : создаёт
+Shared ..> OutboxWorker : запускает
+@enduml

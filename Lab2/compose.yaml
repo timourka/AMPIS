@@ -1,0 +1,95 @@
+name: ampis-lab2
+x-env: &env
+  ASPNETCORE_HTTP_PORTS: '8080'
+  TOKEN_KEY: ${LAB2_TOKEN_KEY:-local-lab2-only-5kMTsNR7WYsgdmGeaSUn}
+  AMQP: amqp://lab:lab@rabbitmq:5672/
+x-pg: &pg
+  image: postgres:16
+  environment: {POSTGRES_USER: lab, POSTGRES_PASSWORD: lab}
+  healthcheck:
+    test: [CMD, pg_isready, -h, '127.0.0.1', -U, lab]
+    interval: 2s
+    timeout: 3s
+    retries: 30
+services:
+  web:
+    build: {context: '.', args: {SERVICE: Web}}
+    ports: ['127.0.0.1:${LAB2_PORT:-8088}:8080']
+  s1:
+    init: true
+    build: {context: '.', dockerfile: Dockerfile.paired, args: {SERVICE: S1}}
+    environment:
+      <<: *env
+      DB: Host=127.0.0.1;Database=postgres;Username=postgres
+    volumes: ["s1:/var/lib/lab2"]
+    healthcheck:
+      test: [CMD, pg_isready, -h, '127.0.0.1', -U, postgres]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  s2:
+    init: true
+    build: {context: '.', args: {SERVICE: S2}}
+    environment:
+      <<: *env
+      DB: Host=b2;Database=lab;Username=lab;Password=lab
+    depends_on:
+      b2: {condition: service_healthy}
+  b2:
+    <<: *pg
+    command: [postgres, -c, wal_level=logical]
+    volumes:
+      - b2:/var/lib/postgresql/data
+      - ./db/s2.sql:/docker-entrypoint-initdb.d/01.sql:ro
+  s3:
+    init: true
+    build: {context: '.', args: {SERVICE: S3}}
+    environment:
+      <<: *env
+      DB: Host=b3;Database=lab;Username=lab;Password=lab
+      FILES_DB: Host=b3;Database=files_read;Username=filereader;Password=filereader
+    depends_on:
+      b3: {condition: service_healthy}
+  b3:
+    <<: *pg
+    depends_on:
+      b2: {condition: service_healthy}
+    volumes:
+      - b3:/var/lib/postgresql/data
+      - ./db/s3.sql:/docker-entrypoint-initdb.d/01.sql:ro
+  s4:
+    init: true
+    build: {context: '.', dockerfile: Dockerfile.paired, args: {SERVICE: S4}}
+    environment:
+      <<: *env
+      DB: Host=127.0.0.1;Database=postgres;Username=postgres
+      AMQP: amqp://lab:lab@reports-bus:5672/
+    networks: [default, reports]
+    volumes: ["s4:/var/lib/lab2"]
+    healthcheck:
+      test: [CMD, pg_isready, -h, '127.0.0.1', -U, postgres]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  rabbitmq:
+    image: rabbitmq:4-management
+    networks:
+      default:
+      reports:
+        aliases: [reports-bus]
+    environment: {RABBITMQ_DEFAULT_USER: lab, RABBITMQ_DEFAULT_PASS: lab}
+    volumes: ["rabbitmq:/var/lib/rabbitmq"]
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, check_running]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+networks:
+  reports:
+    internal: true
+volumes:
+  s1:
+  s4:
+  b2:
+  b3:
+  rabbitmq:
